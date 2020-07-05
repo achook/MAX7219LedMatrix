@@ -48,6 +48,12 @@ public:
      * Default is 7.
      */
     void setCharWidth(byte charWidth);
+
+    /**
+     * Sets the display rotation.
+     * Default is 0.
+     */
+    void setRotation(int rotation);
     
     /**
      * Sets the text alignment.
@@ -116,6 +122,8 @@ public:
      * Oscilate the text between the two limits.
      */
     void oscillateText();
+
+    void rotate();
     
 private:
     byte* cols;
@@ -130,6 +138,6 @@ private:
     byte mySlaveSelectPin = 0;
     byte myCharWidth = 7;
     byte myTextAlignment = 1;
-    
+    int myRotation = 0;
     void calculateTextAlignmentOffset();
 };

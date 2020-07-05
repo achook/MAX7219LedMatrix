@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include "LedMatrix.h"
+#include "Orpheus.h"
 #include "cp437font.h"
 
 /**
@@ -102,6 +102,78 @@ void LedMatrix::commit() {
     }
 }
 
+void LedMatrix::rotate() {
+    if (myRotation == 90) {
+        for (byte device = 0; device < myNumberOfDevices; device++) {
+            byte c[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+            for (byte col = 0; col < 8; col++) {
+                for (byte row = 0; row < 8; row++) {
+                   
+                    c[row] |= ((cols[8*device+col] >> (row)) & 1) << (7-col);
+                }
+            }
+
+            for (byte i = 0; i < 8; i++) {
+                cols[8*device+i] = c[i];
+            }
+        }
+        return;
+    }
+
+    if (myRotation == 270) {
+        for (byte device = 0; device < myNumberOfDevices; device++) {
+            byte c[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+            for (byte col = 0; col < 8; col++) {
+                for (byte row = 0; row < 8; row++) {
+                   
+                    c[row] |= ((cols[8*device+col] >> (7-row)) & 1) << col;
+                }
+            }
+
+            for (byte i = 0; i < 8; i++) {
+                cols[8*device+i] = c[i];
+            }
+        }
+        return;
+    }
+
+    if (myRotation == 180) {
+        for (byte col = 0; col < myNumberOfDevices * 8; col++) {
+            byte b = cols[col];
+
+            b = (b & 0b11110000) >> 4 | (b & 0b00001111) << 4;
+            b = (b & 0b11001100) >> 2 | (b & 0b00110011) << 2;
+            b = (b & 0b10101010) >> 1 | (b & 0b01010101) << 1;
+            
+            cols[col] = b;
+        }
+
+        for (byte device = 0; device < myNumberOfDevices; device++) {
+            byte c;
+
+            c = cols[device * 8];
+            cols[device * 8] = cols[device * 8 + 7];
+            cols[device * 8 + 7] = c;
+
+            c = cols[device * 8 + 1];
+            cols[device * 8 + 1] = cols[device * 8 + 6];
+            cols[device * 8 + 6] = c;
+
+            c = cols[device * 8 + 2];
+            cols[device * 8 + 2] = cols[device * 8 + 5];
+            cols[device * 8 + 5] = c;
+
+            c = cols[device * 8 + 3];
+            cols[device * 8 + 3] = cols[device * 8 + 4];
+            cols[device * 8 + 4] = c;
+        }
+
+        return;
+    }
+}
+
 void LedMatrix::setText(String text) {
     myText = text;
     myTextOffset = 0;
@@ -159,6 +231,10 @@ void LedMatrix::setColumn(int column, byte value) {
         return;
     }
     cols[column] = value;
+}
+
+void LedMatrix::setRotation(int rotation) {
+    myRotation = rotation;
 }
 
 void LedMatrix::setPixel(byte x, byte y) {
