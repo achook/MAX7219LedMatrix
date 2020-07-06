@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include "Orpheus.h"
 #include "cp437font.h"
+#include "digits.h"
 
 /**
  * Heavily influenced by the code and the blog posts from https://github.com/nickgammon/MAX7219_Dot_Matrix
@@ -21,6 +22,7 @@ void LedMatrix::init() {
     SPI.begin ();
     SPI.setDataMode(SPI_MODE0);
     SPI.setClockDivider(SPI_CLOCK_DIV128);
+
     for(byte device = 0; device < myNumberOfDevices; device++) {
         sendByte (device, MAX7219_REG_SCANLIMIT, 7);   // show all 8 digits
         sendByte (device, MAX7219_REG_DECODEMODE, 0);  // using an led matrix (not digits)
@@ -174,15 +176,6 @@ void LedMatrix::rotate() {
     }
 }
 
-void LedMatrix::setText(String text) {
-    myText = text;
-    myTextOffset = 0;
-    calculateTextAlignmentOffset();
-}
-
-void LedMatrix::setNextText(String nextText) {
-    myNextText = nextText;
-}
 
 void LedMatrix::scrollTextRight() {
     myTextOffset = (myTextOffset + 1) % ((int)myText.length() * myCharWidth - 5);
@@ -191,8 +184,6 @@ void LedMatrix::scrollTextRight() {
 void LedMatrix::scrollTextLeft() {
     myTextOffset = (myTextOffset - 1) % ((int)myText.length() * myCharWidth + myNumberOfDevices * 8);
     if (myTextOffset == 0 && myNextText.length() > 0) {
-        myText = myNextText;
-        myNextText = "";
         calculateTextAlignmentOffset();
     }
 }
@@ -212,9 +203,20 @@ void LedMatrix::oscillateText() {
     myTextOffset += increment;
 }
 
-void LedMatrix::drawText() {
+void LedMatrix::setText(String text) {
+    myText = text;
+    myTextOffset = 0;
+    calculateTextAlignmentOffset();
+}
+
+void LedMatrix::displayText() {
     char letter;
     int position = 0;
+
+    for (int i = 0; i < (myTextOffset + myTextAlignmentOffset); i++) {
+        setColumn(i, 0);
+    }
+
     for (int i = 0; i < myText.length(); i++) {
         letter = myText.charAt(i);
         for (byte col = 0; col < 8; col++) {
@@ -223,6 +225,66 @@ void LedMatrix::drawText() {
                 setColumn(position, pgm_read_byte (&cp437_font [letter] [col]));
             }
         }
+    }
+
+    for (int i = position; i < myNumberOfDevices * 8; i++) {
+        setColumn(i, 0);
+    }
+}
+
+void LedMatrix::setTime(byte hour, byte minute) {
+    myDigits[0] = hour / 10;
+    myDigits[1] = hour % 10;
+
+    myDigits[2] = minute / 10;
+    myDigits[3] = minute % 10;
+
+}
+
+void LedMatrix::displayTime(boolean colon) {
+    myTextOffset = 0;
+    calculateTextAlignmentOffset();
+
+    int position = myTextOffset + myTextAlignmentOffset;
+
+    for (int i = 0; i < 2; i++) {
+        int digit = myDigits[i];
+
+        for (byte col = 0; col < 6; col++) {
+            position++;
+
+            if (position >= 0 && position < myNumberOfDevices * 8) {
+                setColumn(position, pgm_read_byte (&digits_font [digit] [col]));
+            }
+        }
+        position++;
+        setColumn(position, 0);
+    }
+
+    if (colon) {
+        position++;
+        setColumn(position, pgm_read_byte (&colon_font [0]));
+        position++;
+        setColumn(position, pgm_read_byte (&colon_font [1]));
+        position++;
+
+    } else {
+        position += 3;
+    }
+
+    for (int i = 2; i < 4; i++) {
+        int digit = myDigits[i];
+
+        for (byte col = 0; col < 6; col++) {
+            position++;
+
+            if (position >= 0 && position < myNumberOfDevices * 8) {
+                setColumn(position, pgm_read_byte (&digits_font [digit] [col]));
+            }
+        }
+
+        position++;
+        setColumn(position, 0);
     }
 }
 

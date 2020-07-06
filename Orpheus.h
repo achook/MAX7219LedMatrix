@@ -86,17 +86,26 @@ public:
      * Draw the currently set text at the current offset.
      */
     void drawText();
-    
+
     /**
      * Set the current text.
      */
     void setText(String text);
     
     /**
-     * Set the text that will replace the current text after a complete scroll
-     * cycle.
+     * Set the current text.
      */
-    void setNextText(String nextText);
+    void displayText();
+
+    /**
+     * Set the current text.
+     */
+    void setTime(byte hour, byte minute);
+
+    /**
+     * Set the current text.
+     */
+    void displayTime(boolean colon);
     
     /**
      * Set a specific column with a byte value to the framebuffer.
@@ -139,5 +148,6 @@ private:
     byte myCharWidth = 7;
     byte myTextAlignment = 1;
     int myRotation = 0;
+    byte myDigits[4];
     void calculateTextAlignmentOffset();
 };
